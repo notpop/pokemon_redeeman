@@ -183,6 +183,7 @@ func main() {
 			return err
 		}
 
+		// TODO:change from .txt
 		if !info.IsDir() && filepath.Ext(path) == ".json" {
 			fileBytes, err := ioutil.ReadFile(path)
 			if err != nil {
