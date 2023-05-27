@@ -1,6 +1,6 @@
 # redeeman
 
-need<br>
+### need<br>
 resource/chromedriver<br>
 resource/selenium-server-standalone-3.141.59.jar<br>
 targets/*.json<br>
@@ -11,5 +11,4 @@ targets/*.json<br>
   ]
 }
 ```
-<br>
 ※values in ".json" is serial code lists
