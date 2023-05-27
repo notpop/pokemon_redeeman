@@ -5,8 +5,8 @@
 <br>
 
 ### need
-resource/chromedriver<br>
-resource/selenium-server-standalone-3.141.59.jar<br>
+resource/chromedriver [here download](https://sites.google.com/chromium.org/driver/)<br>
+resource/selenium-server-standalone-3.141.59.jar [here download](https://www.selenium.dev/downloads/)<br>
 targets/*.json<br>
 ```json
 {
