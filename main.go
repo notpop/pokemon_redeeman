@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	// WebDriverのパスとSelenium Serverのパスは環境に応じて修正してください。
 	seleniumPath     = "resource/selenium-server-standalone-3.141.59.jar"
 	chromeDriverPath = "resource/chromedriver"
 	targetURL        = "https://redeem.tcg.pokemon.com/en-us/"
@@ -28,7 +27,7 @@ func waitForElement(wd selenium.WebDriver, locator, value string) (selenium.WebE
 	var element selenium.WebElement
 	var err error
 
-	for i := 0; i < 10; i++ { // Adjust the number of attempts as needed.
+	for i := 0; i < 10; i++ {
 		element, err = wd.FindElement(locator, value)
 		if err == nil {
 			break
@@ -75,7 +74,7 @@ func waitForElements(wd selenium.WebDriver, locator, value string, index int) (s
 func init() {
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Errorf("Error loading .env file")
+		fmt.Errorf("failed to loading .env file")
 	}
 
 	os.Setenv("PATH", os.Getenv("PATH")+":"+filepath.Dir(chromeDriverPath))
@@ -83,7 +82,7 @@ func init() {
 
 func main() {
 	fmt.Printf("program started.\n")
-	// .envファイルから環境変数を取得する例
+
 	pokemonId := os.Getenv("ACCESS_POKEMON_ID")
 	pokemonPassword := os.Getenv("ACCESS_POKEMON_PASSWORD")
 
@@ -115,7 +114,6 @@ func main() {
 	defer wd.Quit()
 	fmt.Printf("selenium started.\n")
 
-	// WebDriverを利用して特定のURLにアクセスします。
 	err = wd.Get(targetURL)
 	if err != nil {
 		fmt.Printf("Failed to access website: %v", err)
@@ -180,7 +178,6 @@ func main() {
 	fmt.Printf("wrote the source to file.")
 
 	fmt.Printf("loading json.\n")
-	// 以下のパスは適宜変更してください。
 	err = filepath.Walk("targets", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -215,7 +212,6 @@ func main() {
 					return fmt.Errorf("failed to send keys: %v", err)
 				}
 
-				// Submit the code.
 				submitButton, err := waitForElements(wd, selenium.ByClassName, "Button_blueButton__1PlZZ", 0)
 				if err != nil {
 					return fmt.Errorf("failed to find button: %v", err)
@@ -225,11 +221,9 @@ func main() {
 					return fmt.Errorf("failed to click button: %v", err)
 				}
 
-				// Wait for 3 seconds.
 				time.Sleep(3 * time.Second)
 
 				if i > 0 && i%10 == 0 {
-					// Click the next button every 10 codes.
 					nextButton, err := waitForElements(wd, selenium.ByClassName, "Button_blueButton__1PlZZ", 1)
 					if err != nil {
 						return fmt.Errorf("failed to find next button: %v", err)
@@ -239,7 +233,6 @@ func main() {
 						return fmt.Errorf("failed to click next button: %v", err)
 					}
 
-					// Wait for 3 seconds before continuing to the next page.
 					time.Sleep(3 * time.Second)
 				}
 			}

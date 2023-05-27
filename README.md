@@ -1,5 +1,8 @@
 # [WIP]redeeman
 
+## This is a garbage code.
+## Note that implementation is paramount.
+<br>
 ### need
 resource/chromedriver<br>
 resource/selenium-server-standalone-3.141.59.jar<br>
