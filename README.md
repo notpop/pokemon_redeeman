@@ -16,5 +16,5 @@ targets/*.json<br>
 <br>
 
 ### problem
-not found "submit code" button in  index 0 of class name "Button_blueButton__1PlZZ"<br>
-not found "redeem" button in index 1 of class name "Button_blueButton__1PlZZ"<br>
+not found "submit code" button in  index 0 of class name "Button_blueButton__1PlZZ" on selenium<br>
+not found "redeem" button in index 1 of class name "Button_blueButton__1PlZZ" on selenium<br>
