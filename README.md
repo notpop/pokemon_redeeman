@@ -11,3 +11,5 @@ targets/*.json<br>
   ]
 }
 ```
+<br>
+※values in ".json" is serial code lists
