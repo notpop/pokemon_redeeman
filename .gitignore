@@ -1,5 +1,5 @@
-*.env
-response/*
+.env
+response/
 !response/.gitkeep
 targets/*
 !targets/.gitkeep
