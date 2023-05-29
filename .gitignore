@@ -1,4 +1,7 @@
 *.env
 response/*
+!response/.gitkeep
 targets/*
+!targets/.gitkeep
 resource/*
+!resource/.gitkeep
