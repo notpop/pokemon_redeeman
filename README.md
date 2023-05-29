@@ -46,7 +46,7 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 # Redeeman
 
-Redeemanは、特定のウェブサイトにログインし、txtファイルからコードを自動的に登録するプロセスを自動化するGo言語で書かれたプログラムです。Selenium WebDriverとChromeDriverを使用して対象のウェブサイトと対話します。
+Redeemanは、Pokemon TCGのアカウントにログインし、txtファイルから引き換えコードを自動的に登録するプロセスを自動化するGo言語で書かれたプログラムです。Selenium WebDriverとChromeDriverを使用して対象のウェブサイトと対話します。
 
 ## 必要なコンポーネント
 
