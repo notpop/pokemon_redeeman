@@ -1,9 +1,10 @@
 package main
 
 import (
-	"encoding/json"
+	"bufio"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -17,6 +18,7 @@ const (
 	chromeDriverPath = "resource/chromedriver"
 	targetURL        = "https://redeem.tcg.pokemon.com/en-us/"
 	port             = 8080
+	disRedeemableSrc = "/static/media/invalid.33aae293.svg"
 )
 
 type JsonData struct {
@@ -33,7 +35,7 @@ func waitForElement(wd selenium.WebDriver, locator, value string) (selenium.WebE
 			break
 		}
 
-		fmt.Printf("search count: %v\n", i)
+		fmt.Printf("search %v count: %v\n", value, i + 1)
 		time.Sleep(1 * time.Second)
 	}
 
@@ -44,19 +46,41 @@ func waitForElement(wd selenium.WebDriver, locator, value string) (selenium.WebE
 	return element, nil
 }
 
-func waitForElements(wd selenium.WebDriver, locator, value string, index int) (selenium.WebElement, error) {
-	var element selenium.WebElement
-	var err error
+func waitForElementToBeClickable(wd selenium.WebDriver, locator, value string, index int) (selenium.WebElement, error) {
+	return waitGetElementForElements(wd, locator, value, index, false)
+}
+
+func waitForLastElementToBeClickable(wd selenium.WebDriver, locator, value string) (selenium.WebElement, error) {
+	return waitGetElementForElements(wd, locator, value, -1, true)
+}
+
+func waitGetElementForElements(wd selenium.WebDriver, locator, value string, index int, last bool) (selenium.WebElement, error) {
+	var (
+		element selenium.WebElement
+		err     error
+	)
 
 	for i := 0; i < 10; i++ {
 		elements, err := wd.FindElements(locator, value)
-		fmt.Printf("elements: %v\n", elements)
-		if err == nil && len(elements) > 0 {
-			element = elements[index]
-			break
+		if err != nil {
+			return nil, fmt.Errorf("element not found: %v", err)
 		}
 
-		fmt.Printf("search count: %v\n", i)
+		if len(elements) > 0 {
+			if last {
+				index = len(elements) - 1
+			}
+
+			if len(elements) > index {
+				element = elements[index]
+				enabled, err := element.IsEnabled()
+				if err == nil && enabled {
+					break
+				}
+			}
+		}
+
+		fmt.Printf("search %v count: %v\n", value, i + 1)
 		time.Sleep(1 * time.Second)
 	}
 
@@ -74,7 +98,7 @@ func waitForElements(wd selenium.WebDriver, locator, value string, index int) (s
 func init() {
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Errorf("failed to loading .env file")
+		log.Printf("failed to loading .env file: %v", err)
 	}
 
 	os.Setenv("PATH", os.Getenv("PATH")+":"+filepath.Dir(chromeDriverPath))
@@ -95,11 +119,12 @@ func main() {
 	defer service.Stop()
 	fmt.Printf("selenium setting...\n")
 
+	// Headless option does not work properly
 	caps := selenium.Capabilities{
 		"browserName": "chrome",
 		"chromeOptions": map[string]interface{}{
 			"args": []string{
-				"--headless",
+				// "--headless",
 				"--disable-gpu",
 				"--no-sandbox",
 				"--window-size=1280x800",
@@ -174,30 +199,41 @@ func main() {
 	if err != nil {
 		fmt.Println("failed to write html file:", err)
 	}
+	fmt.Printf("wrote the source to file.\n")
 
-	fmt.Printf("wrote the source to file.")
+	cookieAcceptButton, err := waitForElement(wd, selenium.ByID, "onetrust-accept-btn-handler")
+	if err != nil {
+		fmt.Printf("failed to find the cookie accept button: %v", err)
+	} else {
+		err = cookieAcceptButton.Click()
+		if err != nil {
+			fmt.Printf("failed to click the cookie accept button: %v", err)
+		}
+	}
+	fmt.Printf("cookie accepted.\n")
 
-	fmt.Printf("loading json.\n")
+	fmt.Printf("loading txt.\n")
 	err = filepath.Walk("targets", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		// TODO:change from .txt
-		if !info.IsDir() && filepath.Ext(path) == ".json" {
-			fileBytes, err := ioutil.ReadFile(path)
+		if !info.IsDir() && filepath.Ext(path) == ".txt" {
+			file, err := os.Open(path)
 			if err != nil {
-				return fmt.Errorf("failed to read file: %v", err)
+				return fmt.Errorf("failed to open file: %v", err)
+			}
+			defer file.Close()
+
+			lines := []string{}
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				lines = append(lines, scanner.Text())
 			}
 
-			jsonData := JsonData{}
-			err = json.Unmarshal(fileBytes, &jsonData)
-			if err != nil {
-				return fmt.Errorf("failed to decode JSON: %v", err)
-			}
-
-			for i, val := range jsonData.Values {
-				fmt.Printf("search element.\n")
+			for i, val := range lines {
+				fmt.Printf("count: %v\n", i + 1)
+				fmt.Printf("search id=code element.\n")
 				elem, err := waitForElement(wd, selenium.ByID, "code")
 				if err != nil {
 					return fmt.Errorf("failed to find element: %v", err)
@@ -213,7 +249,7 @@ func main() {
 					return fmt.Errorf("failed to send keys: %v", err)
 				}
 
-				submitButton, err := waitForElements(wd, selenium.ByClassName, "Button_blueButton__1PlZZ", 0)
+				submitButton, err := waitForElementToBeClickable(wd, selenium.ByXPATH, "//button[contains(@class, 'Button_blueButton__1PlZZ')]", 0)
 				if err != nil {
 					return fmt.Errorf("failed to find button: %v", err)
 				}
@@ -221,11 +257,27 @@ func main() {
 				if err != nil {
 					return fmt.Errorf("failed to click button: %v", err)
 				}
+				fmt.Printf("submitted. code: %s\n", val)
 
-				time.Sleep(3 * time.Second)
+				time.Sleep(2 * time.Second)
 
-				if i > 0 && i%10 == 0 {
-					nextButton, err := waitForElements(wd, selenium.ByClassName, "Button_blueButton__1PlZZ", 1)
+				deleteButton, _ := waitForLastElementToBeClickable(wd, selenium.ByXPATH, "//*[contains(@class, 'RedeemModule_tdDelete__2-YLO')]")
+				if deleteButton != nil {
+					img, _ := deleteButton.FindElement(selenium.ByTagName, "img")
+					if img != nil {
+						src, _ := img.GetAttribute("src")
+						if src == disRedeemableSrc {
+							if err := deleteButton.Click(); err != nil {
+								return fmt.Errorf("found but failed to click delete button: %v", err)
+							}
+							fmt.Printf("delete button clicked.\n")
+							time.Sleep(2 * time.Second)
+						}
+					}
+				}
+
+				if i == len(lines)-1 || (i > 0 && i%10 == 0) {
+					nextButton, err := waitForElementToBeClickable(wd, selenium.ByXPATH, "//button[contains(@class, 'Button_blueButton__1PlZZ')]", 1)
 					if err != nil {
 						return fmt.Errorf("failed to find next button: %v", err)
 					}
@@ -233,6 +285,7 @@ func main() {
 					if err != nil {
 						return fmt.Errorf("failed to click next button: %v", err)
 					}
+					fmt.Printf("redeemed.\n")
 
 					time.Sleep(3 * time.Second)
 				}
@@ -240,7 +293,7 @@ func main() {
 		}
 		return nil
 	})
-	fmt.Printf("loaded json.\n")
+	fmt.Printf("loaded txt.\n")
 	if err != nil {
 		fmt.Printf("error walking the path %v: %v\n", "targets", err)
 	}
